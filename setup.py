@@ -10,7 +10,7 @@ setup(
     install_requires=[
         'boto3>=1.4.4',
     ],
-    # namespace_packages = ['ecs_on_demand'],
+    namespace_packages = ['ecs_on_demand'],
     author="Jason Bartz",
     author_email="jason@jasonbartz.com",
     url="https://github.com/jasonbartz/ecs-on-demand",
