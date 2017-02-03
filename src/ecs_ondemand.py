@@ -1,6 +1,7 @@
 import os
 import sys
 import boto3
+import botocore
 
 desc = {
 
@@ -18,56 +19,73 @@ def run(event):
 
 	event_name = _get_name_from_image(event["image"])
 
+	region = os.environ.get("AWS_REGION")
+	logs = boto3.client("logs", region_name=region)
+
+	log_group_name = "/ecs-ondemand/{}".format(event_name)
+	try:
+		response = logs.create_log_group(
+			logGroupName=log_group_name,
+		)
+
+	except botocore.exceptions.ClientError as exception:
+		if exception.response["Error"]["Code"] != 'ResourceAlreadyExistsException':
+			raise exception
+
 	task_def = {
-			"family": event_name,
-			"containerDefinitions": [
-				{
-					"name": "runner",
-					"image": event["image"],
-					"memoryReservation": 512,
-					"essential": True,
-					# "privileged": true,
-					# "logConfiguration": {
-					# 	"logDriver": "awslogs",
-					# 	"options": {
-					# 		"awslogs-group": "/nile-pipeline",
-					# 		"awslogs-region": "us-east-1",
-					# 		"awslogs-stream-prefix": "test"
-					# 	}
-					# }
+		"family": event_name,
+		"containerDefinitions": [
+			{
+				"name": "runner",
+				"image": event["image"],
+				"memoryReservation": 512,
+				"essential": True,
+				# "privileged": true,
+				"logConfiguration": {
+					"logDriver": "awslogs",
+					"options": {
+						"awslogs-group": log_group_name,
+						"awslogs-region": region,
+						"awslogs-stream-prefix": "runner"
+					}
 				}
-			]
-		}
+			}
+		]
+	}
 
 
 	if event.get("task"):
-		task_def["taskRoleArn"] = "arn:aws:iam::210767430655:role/Nile"
+		task_def["taskRoleArn"] = event["role"]
 
-	ecs = boto3.client("ecs", region_name=os.environ.get("AWS_REGION"))
+	ecs = boto3.client("ecs", region_name=region)
 	ecs.register_task_definition(**task_def)
 
+	task = {
 
-	fire_task = ecs.run_task(**{
-
-				"cluster": event["cluster"],
-				"taskDefinition": event_name,
-				"overrides": {
-					"containerOverrides": [
+		"cluster": event["cluster"],
+		"taskDefinition": event_name,
+		"overrides": {
+			"containerOverrides": [
+				{
+					"name": "runner",
+					"environment": [
 						{
-							"name": "runner",
-							"environment": [
-								{
-									"name": "DATA",
-									"value": event.get("data", "")
-								}
-							]
+							"name": "DATA",
+							"value": event.get("data", "")
 						}
 					]
-				},
-				"count": 1,
-				"startedBy": "ecs on demand"
-			}
-	)
+				}
+			]
+		},
+		"count": 1,
+		"startedBy": "ecs on demand"
+	}
+	if event.get("environment"):
+		for key, value in event.get("environment").values():
+			task["overrides"]["containerOverrides"]["environment"][key] = value
+
+	fire_task = ecs.run_task(**)
+
 	print(fire_task)
 
 if __name__ == "__main__":
