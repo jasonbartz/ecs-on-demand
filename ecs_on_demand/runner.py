@@ -84,7 +84,7 @@ def run(event):
 		for key, value in event.get("environment").values():
 			task["overrides"]["containerOverrides"]["environment"][key] = value
 
-	fire_task = ecs.run_task(**)
+	fire_task = ecs.run_task(**task)
 
 	print(fire_task)
 
