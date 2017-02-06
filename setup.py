@@ -13,7 +13,7 @@ setup(
     url="https://github.com/jasonbartz/ecs-on-demand",
     # download_url = "https://github.com/jasonbartz/ecs-on-demand/tarball/v0.0.1",
     keywords = ['amazon', 'ecs', 'aws', 'container', 'docker'],
-    classifiers = []
+    classifiers = [],
     extras_require={
         'not-lambda': ['boto3>=1.4.4'],
     }

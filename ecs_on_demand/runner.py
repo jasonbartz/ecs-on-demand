@@ -15,6 +15,12 @@ def _get_name_from_image(image):
 	print(image)
 	return image.replace("/", "_")
 
+def is_debug():
+	debug := os.environ.get("DEBUG", False)
+	if debug and debug.lower() in ["t", "true", "1", "y", "yes"]:
+		return True
+	return False
+
 def run(event):
 
 	event_name = _get_name_from_image(event["image"])
@@ -53,6 +59,8 @@ def run(event):
 		]
 	}
 
+	if is_debug:
+		print(task_def)
 
 	if event.get("task"):
 		task_def["taskRoleArn"] = event["role"]
