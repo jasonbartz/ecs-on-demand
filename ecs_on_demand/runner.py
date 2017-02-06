@@ -1,34 +1,23 @@
 import os
 import sys
+import re
 import boto3
 import botocore
 
-desc = {
 
-	"image": "",
-	"data": "",
-	"role": "",
-	"cluster": ""
-}
+bad_image_chars = re.compile(r"[/.]")
 
 def _get_name_from_image(image):
-	print(image)
-	return image.replace("/", "_")
+	return bad_image_chars.sub("_", image)
 
-def is_debug():
-	debug := os.environ.get("DEBUG", False)
-	if debug and debug.lower() in ["t", "true", "1", "y", "yes"]:
-		return True
-	return False
-
-def run(event):
+def run(event, debug=False):
 
 	event_name = _get_name_from_image(event["image"])
 
 	region = os.environ.get("AWS_REGION")
 	logs = boto3.client("logs", region_name=region)
 
-	log_group_name = "/ecs-ondemand/{}".format(event_name)
+	log_group_name = "/ecs-on-demand/{}".format(event_name)
 	try:
 		response = logs.create_log_group(
 			logGroupName=log_group_name,
@@ -59,11 +48,11 @@ def run(event):
 		]
 	}
 
-	if is_debug:
+	if debug:
 		print(task_def)
 
-	if event.get("task"):
-		task_def["taskRoleArn"] = event["role"]
+	if event.get("task_role_arn"):
+		task_def["taskRoleArn"] = event["task_role_arn"]
 
 	ecs = boto3.client("ecs", region_name=region)
 	ecs.register_task_definition(**task_def)
@@ -89,8 +78,11 @@ def run(event):
 		"startedBy": "ecs on demand"
 	}
 	if event.get("environment"):
-		for key, value in event.get("environment").values():
-			task["overrides"]["containerOverrides"]["environment"][key] = value
+		for key, value in event.get("environment").items():
+			task["overrides"]["containerOverrides"][0]["environment"].append({
+				"name": key,
+				"value": value,
+			})
 
 	fire_task = ecs.run_task(**task)
 

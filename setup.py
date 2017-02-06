@@ -4,7 +4,7 @@ import warnings
 
 setup(
     name='ecs-on-demand',
-    version='0.0.1',
+    version='0.0.16',
     packages=find_packages(),
     include_package_data=True,
     # namespace_packages = ['ecs_on_demand'],
