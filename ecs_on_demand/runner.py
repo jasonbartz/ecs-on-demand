@@ -88,7 +88,10 @@ def run(event, debug=False):
 
 	fire_task = ecs.run_task(**task)
 
-	print(fire_task)
+	if debug:
+		print(fire_task)
+
+	return fire_task
 
 if __name__ == "__main__":
 
