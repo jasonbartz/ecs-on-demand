@@ -4,7 +4,7 @@ import warnings
 
 setup(
     name='ecs-on-demand',
-    version='0.0.18',
+    version='0.0.19',
     packages=find_packages(),
     include_package_data=True,
     author="Jason Bartz",
