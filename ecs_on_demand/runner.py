@@ -12,6 +12,7 @@ event_fields = tuple([
 	"cluster",
 	"count",
 	"throughput",
+	"environment",
 ])
 
 bad_image_chars = re.compile(r"[/.]")
