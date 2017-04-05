@@ -5,6 +5,15 @@ import boto3
 import botocore
 
 
+event_fields = tuple([
+	"image",
+	"task_role_arn",
+	"privileged",
+	"cluster",
+	"count",
+	"throughput",
+])
+
 bad_image_chars = re.compile(r"[/.]")
 
 def _get_name_from_image(image):
@@ -76,7 +85,7 @@ def run(event, debug=False):
 				}
 			]
 		},
-		"count": 1,
+		"count": event.get("count", 1),
 		"startedBy": "ecs on demand"
 	}
 	if event.get("environment"):
@@ -85,6 +94,14 @@ def run(event, debug=False):
 				"name": key,
 				"value": value,
 			})
+
+	# If throughout is set, this checks to see if the task is already running and at what scale.
+	# It will only start a maximum of throughput
+	if event.get("throughput"):
+		tasks = ecs.list_tasks(cluster=event["cluster"], family=event_name)
+		running_tasks = len(tasks["taskArns"])
+		if running_tasks >= event["throughput"]:
+			raise Exception("cannot start task. There are {} tasks running and the requested throughput is {}".format(running_tasks, event["throughput"]))
 
 	fire_task = ecs.run_task(**task)
 
@@ -100,7 +117,7 @@ if __name__ == "__main__":
 		event = {
 			"image": sys.argv[1],
 			"cluster": sys.argv[2],
-			# "data": ,
+			"throughput": 1,
 			# "role": "",
 		}
 	except:

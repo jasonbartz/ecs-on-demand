@@ -6,6 +6,6 @@ ADD requirements.txt .
 
 RUN pip install -r requirements.txt
 
-ADD src/ .
+ADD ecs_on_demand/ .
 
-CMD ["python", "ecs_ondemand.py"]
+CMD ["python", "runner.py"]
